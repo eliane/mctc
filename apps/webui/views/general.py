@@ -22,7 +22,7 @@ from apps.reusable_tables.table import get
 
 # some webui defaults
 app = {}
-app['name'] = "RapidReport:Health"
+app['name'] = "RapidResponse:Health"
 
 # not quite sure how to figure this out programatically
 domain = "localhost"
