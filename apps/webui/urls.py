@@ -8,6 +8,7 @@ from apps.mctc.models.general import Case
 from apps.webui.forms.general import CaseForm
 
 urlpatterns = patterns('',
+    (r'^http/$', "apps.webui.views.general.http_view"),
     (r'^$', "apps.webui.views.general.dashboard"),
     (r'^search/$', "apps.webui.views.general.search_view"),
     (r'^district/$', "apps.webui.views.general.district_view"),    
