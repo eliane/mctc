@@ -13,6 +13,7 @@ from apps.mctc.models.reports import ReportMalnutrition, ReportMalaria, ReportDi
 
 from apps.webui.shortcuts import as_html, login_required
 from apps.webui.forms.general import MessageForm
+from apps.webui.grapher import FlotGraph
 
 from datetime import datetime, timedelta
 import time
@@ -84,8 +85,28 @@ def get_graph(length=100, filter=Q()):
         .filter(entered_at__lte=end)\
         .order_by("-entered_at")\
         .values_list("muac", "entered_at")
-    results = [ [ time.mktime(r[1].timetuple()) * 1000,  r[0] ] for r in results ]
-    results = { "start":'"%s"' % start.strftime("%Y/%m/%d"), "end":'"%s"' % end.strftime("%Y/%m/%d"), "results":results }
+    results1 = [ [ time.mktime(r[1].timetuple()) * 1000,  r[0] ] for r in results ]
+    results2 = [ [ time.mktime(r[1].timetuple()) * 1000,  r[0]+10 ] for r in results ]
+    muac_data = [{'data': results1, 'label': "Muac"}, {'data': results2, 'label': "Bigger Muac"}]
+    
+    g = FlotGraph()
+    g.set_data(muac_data)
+    g.set_xaxis_mode("time")
+    g.set_key_position(0)
+    g.set_display_title("Muac over time")
+    g.set_width(400)
+    g.set_height(200)
+    g.set_title("muac")
+    g.set_zoomable(1)
+    g.set_key_position(1)
+    g.set_xaxis_min_ticksize("[1, \"day\"]")
+    start_string = ("(new Date(\"%s\")).getTime()" % start.strftime("%Y/%m/%d"))
+    g.set_xaxis_min(start_string)
+    end_string = ("(new Date(\"%s\")).getTime()" % end.strftime("%Y/%m/%d"))
+    g.set_xaxis_max(end_string)
+    g.set_time_format("%b %d")
+    g.generate_javascript()
+    results = { "start":'"%s"' % start.strftime("%Y/%m/%d"), "end":'"%s"' % end.strftime("%Y/%m/%d"), "results":results, "g":g}
     return results
     
 def get_summary():
@@ -180,6 +201,28 @@ def case_view(request, object_id):
     if nonhtml:
         return nonhtml
 
+    results = ReportMalnutrition.objects\
+        .filter(Q(case=case)).exclude(muac=None)\
+        .order_by("-entered_at")\
+        .values_list("muac", "entered_at")
+    results1 = [ [ time.mktime(r[1].timetuple()) * 1000,  r[0] ] for r in results ]
+
+    muac_data = [{'data': results1, 'label': "Muac"}]
+    
+    g = FlotGraph()
+    g.set_data(muac_data)
+    g.set_xaxis_mode("time")
+    g.set_key_position(0)
+    g.set_display_title("Muac over time")
+    g.set_width(400)
+    g.set_height(200)
+    g.set_title("muac")
+    g.set_zoomable(1)
+    g.set_key_position(1)
+    g.set_xaxis_min_ticksize("[1, \"day\"]")
+    g.set_time_format("%b %d")
+    g.generate_javascript()
+
     context = {
 		"app": app,
         "object": case,
@@ -187,6 +230,8 @@ def case_view(request, object_id):
         "diagnosis": tables[1],
         "malaria": tables[2],
         "event": tables[3],
+        "graph": g,
+        "raw_data": results1,
     }
     return as_html(request, "caseview.html", context)
 
@@ -204,6 +249,36 @@ def district_view(request):
         context["cases"] = tables[0]
 
     return as_html(request, "districtview.html", context)
+
+@login_required
+def http_view(request):
+   
+    has_provider = True
+    context = {
+		"app": app,
+    }
+    
+    try:
+        mobile = request.user.provider.mobile
+        if request.method == "POST":
+            messageform = MessageForm(request.POST)
+            if messageform.is_valid():
+                result = message_users(mobile, **messageform.cleaned_data)
+                context["msg"] = result
+        else:
+            messageform = MessageForm()
+    except ObjectDoesNotExist:
+        has_provider = False
+        messageform = None
+
+    context.update({
+			"app": app,
+            "message_form": messageform,
+            "has_provider": has_provider,
+        })
+
+    return as_html(request, "httpview.html", context)
+
 
 @login_required
 def provider_list(request):

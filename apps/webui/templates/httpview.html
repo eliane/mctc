@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+{% block title %}Message Tester{% endblock %}
+{% block javascripts-top %}
+<script language="javascript" type="text/javascript" src="/static/webui/js/autocomplete/actb.js"></script>
+<script language="javascript" type="text/javascript" src="/static/webui/js/autocomplete/common.js"></script>
+<script>
+var customarray=new Array({{ message_form.get_users_array|safe }});
+</script>
+<script language="javascript">
+function testResults (form) {
+    var TestVar = form.inputbox.value;
+    alert ("You typed: " + TestVar);
+}
+</script>
+{% endblock %}
+
+{% block breadcrumbs %}
+    <a href="/">{{app.name}}</a>   
+    &raquo; Message Tester
+{% endblock %}
+
+{% block content %}
+
+
+<h2>Message users</h2>
+{% if has_provider %}
+<form method="post">
+    <fieldset>
+        {{ message_form.as_custom }}
+	
+        <input type="submit" value="send" />
+	
+    </fieldset>
+</form>
+<FORM name="myform" ACTION="" METHOD="GET">Send the message to:
+<Input type="text" style='font-family:verdana;width:300px;font-size:12px' NAME="inputbox" id="tb" VALUE=""><P>
+<INPUT TYPE="button" NAME="button" Value="Click" onClick="testResults(this.form)">
+<script>
+    var obj = actb(document.getElementById('tb'),customarray);
+</script>
+</FORM>
+
+
+
+{% else %}
+<p class="error">You need to add in phone number to send messages, you are logged in as {{ user }}.</p>
+{% endif %}
+ 
+{% endblock %}

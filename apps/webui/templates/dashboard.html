@@ -2,23 +2,11 @@
 {% block title %}Dashboard{% endblock %}
 {% block content %}
 
-<h2>MUAC over time</h2>
-<div id="graph" style="width: 500px; height: 200px" />
-<script type="text/javascript">
-$(function() {
-    var d1 = {{ graph.results|safe }};
-    $.plot($("#graph"), [ d1, ],
-        {
-            xaxis: {
-                    mode: "time",
-                    minTickSize: [1, "day"],
-                    min: (new Date({{ graph.start|safe }})).getTime(),
-                    max: (new Date({{ graph.end|safe }})).getTime()
-                }
-        });
-});
-</script>
+
+<div id="graph" style="width: 600px; height: 250px;"/>
+{{ graph.g.javascript_string|safe }}
 </div>
+
 <h2>Cases</h2>
 {{ case_table }}
 <h2>Event Log</h2>
